@@ -1,0 +1,50 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+ENV['VAGRANT_DEFAULT_PROVIDER'] = 'libvirt'
+
+Vagrant.configure("2") do |config|
+  #config.vm.define :box, primary: true do |box|
+  #    box.vm.box = 'centos/8'
+  #    box.vm.network :public_network, ip: '192.168.1.163'
+  #end
+
+  config.vm.box = "centos/8"
+  config.vm.hostname = "node-3"
+  config.vm.network :private_network, :ip => "192.168.124.23"
+  config.vm.synced_folder ".", "/vagrant", type: "nfs"
+  # config.vm.synced_folder "../data", "/home/vagrant/data", type: "nfs"
+  # config.vm.synced_folder ".", "/vagrant", type: "rsync", rsync__exclude: ".git/"
+
+  config.vm.provider :libvirt do |libvirt|
+     libvirt.memory = 2048
+     libvirt.cpus = 2
+     #libvirt.machine_virtual_size = '30G'
+     # libvirt.storage :file, :size => '40G'
+  end
+
+  config.vm.provider :proxmox do |proxmox|
+      proxmox.endpoint = 'https://proxmox:8006/api2/json'
+      proxmox.verify_ssl = false
+      proxmox.user_name = 'vagrant@pve'
+      proxmox.password = 'password'
+      proxmox.vm_id_range = 900..910
+      proxmox.vm_type = :qemu
+      #proxmox.vm_name_prefix = 'vagrant_'
+      proxmox.qemu_os = :l26
+      #proxmox.qemu_disk_size = '20G'
+      #proxmox.qemu_storage = 'local'
+      #proxmox.qemu_iso_file = '/home/user/system.iso'
+      proxmox.openvz_os_template = 'local:vztmpl/centos-8-default_20191016_amd64.tar.xz'
+      proxmox.vm_type = :openvz
+      proxmox.vm_memory = 2048
+      proxmox.qemu_cores = 2
+      proxmox.qemu_sockets = 1
+      proxmox.qemu_nic_model = 'virtio'
+      proxmox.qemu_bridge = 'vmbr0'
+  end
+
+  config.vm.provision "shell", inline: <<-SHELL
+    /vagrant/install.sh
+  SHELL
+end
