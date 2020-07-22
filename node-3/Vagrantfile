@@ -35,8 +35,7 @@ Vagrant.configure("2") do |config|
       #proxmox.qemu_disk_size = '20G'
       #proxmox.qemu_storage = 'local'
       #proxmox.qemu_iso_file = '/home/user/system.iso'
-      proxmox.openvz_os_template = 'local:vztmpl/centos-8-default_20191016_amd64.tar.xz'
-      proxmox.vm_type = :openvz
+      proxmox.qemu_template = 'centos-8'
       proxmox.vm_memory = 2048
       proxmox.qemu_cores = 2
       proxmox.qemu_sockets = 1

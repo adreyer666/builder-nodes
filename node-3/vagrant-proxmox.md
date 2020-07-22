@@ -31,24 +31,28 @@ An openvz template or iso image with vagrant user setup is mandatory..
 
 ```
 node_name=pve
-image=/tmp/centos-8.qcow2
+name=centos-8
+image=/tmp/${name}.qcow2
 scp  ~/.vagrant.d/boxes/centos-*-8/*/libvirt/box.img ${node_name}:${image}
 ```
 
 #### proxmox - import disk to new image
 ```
-image=/tmp/centos-8.qcow2
+name=centos-8
+image=/tmp/${name}.qcow2
 
 # Get a vmid
 vmid=`pvesh get /cluster/nextid | sed -e 's/"//g'`
 # create new vm
-qm create ${vmid} --bootdisk scsi0
+qm create ${vmid} --bootdisk scsi0 -name ${name}
 # import the disk
 qm importdisk ${vmid} ${image} local-lvm
 # set the imported disk as bootdisk
 qm set ${vmid} --scsi0 local-lvm:vm-${vmid}-disk-0
 # ensure all disk (and disk sizes) are accounted for
 qm rescan
+# cleanup
+rm -f ${image}
 ```
 
 #### Convert vm to template
@@ -78,4 +82,15 @@ vmid=`pvesh get /cluster/nextid | sed -e 's/"//g'`
 # create new vm
 pct create ${vmid} local:vztmpl/backup.tar.gz -hostname $hostname -onboot 1 -rootfs local-lvm:20 -memory 2048 -cores 2
 ```
+
+## Run Vagrant with proxmox provider
+The `proxmox` API by default runs on port 8006 and is only available via https using self signed certificates. If you cannot get an "official" certificate (eg. from letsencrypt), then you can either:
+- add the proxmox PVE's pve-root-ca.pem file to the vagrant CA cert chain. This allows Vagrant to run its SSL check properly and trust the self signed cert provided by Proxmox.
+  - `(echo "Proxmox server"; cat pve-root-ca.pem ) >> ~/.vagrant.d/gems/gems/excon-*/data/cacert.pem`
+- modify the provider to not verify the SSL certificate (verify_ssl: false)
+
+
+## Links
+* https://www.gastongonzalez.com/tech-blog/2016/12/24/building-a-developer-virtualization-lab-part-2
+
 

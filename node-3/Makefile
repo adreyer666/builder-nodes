@@ -7,7 +7,7 @@ BUILD = default
 IMAGE = $(NAME)_$(BUILD)
 
 build:
-	vagrant up --provider=libvirt
+	vagrant up --provider=proxmox
 	vagrant ssh-config --host $(NAME) >> ~/.ssh/config.d/$(NAME).conf
 	ssh -X $(NAME)
 
