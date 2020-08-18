@@ -17,30 +17,47 @@ Vagrant.configure("2") do |config|
   # config.vm.synced_folder ".", "/vagrant", type: "rsync", rsync__exclude: ".git/"
 
   config.vm.provider :libvirt do |libvirt|
-     libvirt.memory = 2048
-     libvirt.cpus = 2
-     #libvirt.machine_virtual_size = '30G'
-     # libvirt.storage :file, :size => '40G'
+    ## connection details
+    libvirt.uri = 'qemu+unix:///system'
+    libvirt.connect_via_ssh = true
+    libvirt.host = 'kvmnode'
+    libvirt.username = 'virtual'
+    libvirt.password = 'virtual'
+    libvirt.id_ssh_key_file = 'id_rsa'
+    ## vm details
+    libvirt.driver = 'kvm'
+    libvirt.memory = 2048
+    libvirt.cpus = 2
+    #libvirt.machine_virtual_size = '30G'
+    # libvirt.storage :file, :size => '40G'
   end
 
   config.vm.provider :proxmox do |proxmox|
-      proxmox.endpoint = 'https://proxmox:8006/api2/json'
-      proxmox.verify_ssl = false
-      proxmox.user_name = 'vagrant@pve'
-      proxmox.password = 'password'
-      proxmox.vm_id_range = 900..910
-      proxmox.vm_type = :qemu
-      #proxmox.vm_name_prefix = 'vagrant_'
-      proxmox.qemu_os = :l26
-      #proxmox.qemu_disk_size = '20G'
-      #proxmox.qemu_storage = 'local'
-      #proxmox.qemu_iso_file = '/home/user/system.iso'
-      proxmox.qemu_template = 'centos-8'
-      proxmox.vm_memory = 2048
-      proxmox.qemu_cores = 2
-      proxmox.qemu_sockets = 1
-      proxmox.qemu_nic_model = 'virtio'
-      proxmox.qemu_bridge = 'vmbr0'
+    ## connection details
+    proxmox.endpoint = 'https://pve:8006/api2/json'
+    proxmox.verify_ssl = false
+    proxmox.user_name = 'vagrant@pve'
+    proxmox.password = 'password'
+    ## vm details
+    proxmox.vm_id_range = 900..910
+    #proxmox.vm_name_prefix = 'vagrant_'
+    ## openvz
+    proxmox.vm_type = :openvz
+    proxmox.openvz_os_template = '/var/lib/vz/dump/vzdump-qemu-150-2020_07_23-12_12_31.vma.gz'
+    ## qemu
+    # proxmox.vm_type = :qemu
+    # proxmox.qemu_os = :l26
+    # #proxmox.qemu_disk_size = '20G'
+    # #proxmox.qemu_storage = 'local'
+    # #proxmox.qemu_iso_file = '/home/user/system.iso'
+    # #INFO: creating vzdump archive '/var/lib/vz/dump/vzdump-lxc-100-2020_07_23-12_10_27.tar.lzo'
+    # #INFO: creating vzdump archive '/var/lib/vz/dump/vzdump-qemu-150-2020_07_23-12_12_31.vma.gz'
+    # #proxmox.qemu_template = 'centos-8'
+    proxmox.vm_memory = 2048
+    proxmox.qemu_cores = 2
+    proxmox.qemu_sockets = 1
+    proxmox.qemu_nic_model = 'virtio'
+    proxmox.qemu_bridge = 'vmbr0'
   end
 
   config.vm.provision "shell", inline: <<-SHELL

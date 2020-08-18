@@ -6,6 +6,10 @@ dnf install -y \
     curl ca-certificates sudo \
     vim-minimal openssh-clients gnupg2 \
     git
+curl -skL -o /tmp/crudini.noarch.rpm \
+    https://cbs.centos.org/kojifiles/packages/crudini/0.9.3/1.el8/noarch/crudini-0.9.3-1.el8.noarch.rpm \
+    && dnf localinstall -y /tmp/crudini.noarch.rpm \
+    && rm -f /tmp/crudini.noarch.rpm
 
 # podman
 dnf install -y \
@@ -33,13 +37,15 @@ dnf clean all
 # ---- add some local configurations/tools ---- #
 # system
 echo 'net.ipv4.ip_forward = 1' > /etc/sysctl.d/10-ip_forward.conf
-sysctl -p /etc/sysctl.d/10-ip_forward.conf
+echo 'net.ipv4.ip_unprivileged_port_start = 0' > /etc/sysctl.d/11-unpriviledged_ports.conf
 cat > /etc/sysctl.d/k8s.conf <<EOM
 net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
 EOM
 sysctl --system
 swapoff -a
+
+crudini --set /etc/containers/registries.conf registries.insecure registries "['registry:5000']"
 
 # ---- staging area ---- #
 # user

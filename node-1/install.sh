@@ -37,13 +37,15 @@ echo "kernel.unprivileged_userns_clone=1" >> /etc/sysctl.d/10-userns.conf
 sysctl -p /etc/sysctl.d/10-userns.conf
 # system
 echo 'net.ipv4.ip_forward = 1' > /etc/sysctl.d/10-ip_forward.conf
-sysctl -p /etc/sysctl.d/10-ip_forward.conf
+echo 'net.ipv4.ip_unprivileged_port_start = 0' > /etc/sysctl.d/11-unpriviledged_ports.conf
 cat > /etc/sysctl.d/k8s.conf <<EOM
 net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
 EOM
 sysctl --system
 swapoff -a
+
+crudini --set /etc/containers/registries.conf registries.insecure registries "['registry:5000']"
 
 # ---- staging area ---- #
 # user
