@@ -1,11 +1,16 @@
 #!/bin/sh -f
 
-#dnf upgrade -y
+dnf upgrade -y
 dnf install -y \
     procps iproute iptables nftables \
     curl ca-certificates sudo \
     vim-minimal openssh-clients gnupg2 \
     git
+dnf install -y epel-release
+dnf install -y screen
+
+    dnf install epel-release
+dnf install screen
 
 
 # podman
@@ -98,19 +103,28 @@ kubeadm config images pull
 
 
 # ---- staging area ---- #
+USERNAME="admin"
+USERHOME="/home/${USERNAME}"
+groupadd -g 900 ${USERNAME}
+useradd -u 900 -g 900 -m -d ${USERHOME} ${USERNAME}
+su - ${USERNAME} -c "ssh-keygen -b 4096 -f ${USERHOME}/.ssh/id_rsa -N ''"
+cp /vagrant/authorized_keys ${USERHOME}/.ssh/
+chown ${USERNAME}: ${USERHOME}/.ssh/authorized_keys
+chmod 0600 ${USERHOME}/.ssh/authorized_keys
+echo 'admin   ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/admin
+
 # user
-su - vagrant -c "git config --global pull.ff only"
+su - ${USERNAME} -c "git config --global pull.ff only"
 mkdir -p /usr/local/src
 mkdir -p /usr/local/bin
-chown -R vagrant: /usr/local/src
+chown -R ${USERNAME}: /usr/local/src
 
-USERHOME=/home/vagrant
-mkdir -p $USERHOME/.kube
-touch $USERHOME/.kube/config
+mkdir -p ${USERHOME}/.kube
+touch ${USERHOME}/.kube/config
 test -f /etc/kubernetes/admin.conf \
-  && cp -av /etc/kubernetes/admin.conf $USERHOME/.kube/config
-chown -R vagrant: $USERHOME/.kube
-#su - vagrant -c 'kubeadm config images pull'
-#su - vagrant -c 'kubeadm token list'
+  && cp -av /etc/kubernetes/admin.conf ${USERHOME}/.kube/config
+chown -R ${USERNAME}: ${USERHOME}/.kube
+#su - ${USERNAME} -c 'kubeadm config images pull'
+#su - ${USERNAME} -c 'kubeadm token list'
 
 

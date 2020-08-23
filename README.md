@@ -17,3 +17,10 @@ registries = ['docker.io', 'quay.io', 'registry.fedoraproject.org', 'registry.ac
 ```
 
 
+## Management
+```
+$ sudo apt install terminator
+$ cp terminator.config ~/.config/terminator/config
+$ terminator -l pods
+```
+
