@@ -8,7 +8,7 @@ All nodes are set up using `vagrant`.
 
 
 ### Docker / Podman
-Ensure you have all upstream registries in the registry list. When starting to create your own containers you might want to spin up your own registry and add it as well.
+Ensure you have all upstream registries in the registry list. When starting to create your own containers you *do* want to spin up your own registry and add it to the list.
 
 ```
 # cat /etc/containers/registries.conf
@@ -23,4 +23,8 @@ $ sudo apt install terminator
 $ cp terminator.config ~/.config/terminator/config
 $ terminator -l pods
 ```
+
+## TODO
+* set up environment with [Packer](https://www.packer.io/downloads.html) utilizing [Ansible]() as [provisioner]() to build my own base images for vagrant. [1](https://github.com/vagrant-libvirt/vagrant-libvirt#create-box)
+* when using libvirt as virtualization backend make sure to set up the channels for `guest_agent`/`spice` access. [1](https://libvirt.org/formatdomain.html#elementCharChannel), see node-2 for example
 
