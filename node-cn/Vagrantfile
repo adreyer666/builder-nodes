@@ -6,12 +6,12 @@ ENV['VAGRANT_DEFAULT_PROVIDER'] = 'libvirt'
 Vagrant.configure("2") do |config|
   #config.vm.define :box, primary: true do |box|
   #    box.vm.box = 'centos/8'
-  #    box.vm.network :public_network, ip: '192.168.1.160'
+  #    box.vm.network :public_network, ip: '192.168.1.155'
   #end
 
   config.vm.box = "centos/8"
   config.vm.hostname = "node-cn"
-  config.vm.network :private_network, :ip => "192.168.124.10"
+  config.vm.network :private_network, :ip => "192.168.124.5"
   config.vm.synced_folder ".", "/vagrant", type: "nfs"
   # config.vm.synced_folder "../data", "/home/vagrant/data", type: "nfs"
   # config.vm.synced_folder ".", "/vagrant", type: "rsync", rsync__exclude: ".git/"
@@ -23,11 +23,15 @@ Vagrant.configure("2") do |config|
     # libvirt.password = virtual
     # libvirt.id_ssh_key_file = "id_rsa"
     libvirt.uri = "qemu+ssh://virtual@192.168.1.10/system"
-    #libvirt.driver = 'kvm'
+    libvirt.channel :type => 'unix', :target_name => 'org.qemu.guest_agent.0', :target_type => 'virtio'
+    libvirt.channel :type => 'spicevmc', :target_name => 'com.redhat.spice.0', :target_type => 'virtio'
 
+    ## vm details
+    libvirt.driver = 'kvm'
     libvirt.memory = 2048
     libvirt.cpus = 2
-    #libvirt.machine_virtual_size = '30G'
+    # libvirt.nested = true
+    # libvirt.machine_virtual_size = '30G'
     # libvirt.storage :file, :size => '40G'
   end
 
