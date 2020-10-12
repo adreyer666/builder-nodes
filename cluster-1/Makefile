@@ -8,7 +8,7 @@ IMAGE = $(NAME)_$(BUILD)
 
 build:
 	vagrant up --provider=libvirt 2>&1 | tee make.log
-	vagrant ssh-config >> ~/.ssh/config.d/vagrant-$(NAME).conf
+	vagrant ssh-config > ~/.ssh/config.d/vagrant-$(NAME).conf
 
 run:
 	ssh -X kjump1

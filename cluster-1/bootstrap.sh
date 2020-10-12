@@ -5,7 +5,8 @@ dnf install -y \
     procps iproute iptables nftables \
     curl ca-certificates sudo \
     vim-minimal openssh-clients gnupg2 \
-    git jq
+    git jq \
+    nfs-utils
 curl -skL -o /tmp/crudini.noarch.rpm \
     https://cbs.centos.org/kojifiles/packages/crudini/0.9.3/1.el8/noarch/crudini-0.9.3-1.el8.noarch.rpm \
     && dnf localinstall -y /tmp/crudini.noarch.rpm \
@@ -63,11 +64,11 @@ su - vagrant -c "kubeadm config images pull"
 exit 0
 
 
+#----------------------------------------------------------------------------------------#
 
 
 #set cfg server address and access token enviroment variables
-export cfgUSER="bootstrap"
-export cfgURL="http://${cfgUser}@desktop.lan:8200"
+export cfgURL="http://bootstrap@desktop.lan:8200"
 export TOKEN="nvfkivgewrjgtoirewnh"
 # CA
 curl -skL --oauth2-bearer "${TOKEN}" ${cfgURL}/pki_int/issue/leaf-cert/kubernetes > ca.json

@@ -1,0 +1,22 @@
+{
+	"security": {
+		"token": "",
+		"hash": ""
+	},
+	"pod": {
+		"network":"",
+		"cluster_ip": ""
+	},
+	"management": {
+		"applications": [
+			"lens"
+		],
+		"flannel": {
+			"version":"0.1.2"
+		}
+		"lens":{
+			"version":"3.4.0"
+		}
+	}
+}
+
