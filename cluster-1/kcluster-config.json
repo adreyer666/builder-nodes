@@ -1,11 +1,33 @@
 {
 	"security": {
-		"token": "",
+		"token": "fu7lnd.6bjblgwp4ka7u612",
 		"hash": ""
 	},
+	"nodes":{
+		"kjump#{i}": {
+			"count":1,
+			"hostname":"kjump#{i}.example.com",
+			"ip":"172.16.16.10#{i}"
+		},
+		"kmaster#{i}": {
+			"count":1,
+			"hostname":"kmaster#{i}.example.com",
+			"ip":"172.16.16.11#{i}"
+		},
+		"kworker#{i}": {
+			"count":2,
+			"hostname":"kworker#{i}.example.com",
+			"ip":"172.16.16.20#{i}"
+		}
+	},
 	"pod": {
-		"network":"",
-		"cluster_ip": ""
+		"network":"192.168.10.0/24",
+		"cluster_ip": "192.168.121.99/24"
+	},
+	"container": {
+		"runtime": {
+			"version":"1.19"
+		}
 	},
 	"management": {
 		"applications": [
@@ -13,10 +35,23 @@
 		],
 		"flannel": {
 			"version":"0.1.2"
-		}
+		},
 		"lens":{
 			"version":"3.4.0"
 		}
+	},
+	"sw": {
+		"crudini": {
+			"version":"0.9.3",
+			"revision":"1.el8"
+		},
+		"crio": {
+			"version":"1.19",
+			"#os":"CentOS_8_Stream",
+			"os":"CentOS_8"
+		},
+		"kube": {
+			"os":"el7"
+		}
 	}
 }
-

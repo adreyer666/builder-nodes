@@ -1,6 +1,7 @@
 #!/bin/bash
 
 test `id -u` -eq 0 && echo "DO NOT RUN AS ROOT" && exit 0
+test "$1" = '-D' && shift && set -x
 
 set -e
 
@@ -10,17 +11,48 @@ TOKEN=`jq -r .security.token <$kcfg`
 HASH=`jq -r .security.hash <$kcfg`
 PODNET=`jq -r .pod.network <$kcfg`
 PODIP=`jq -r .pod.cluster_ip <$kcfg`
+CRIOVER=`jq -r .container.runtime.version <$kcfg`
 LENSVER=`jq -r .management.lens.version <$kcfg`
 NETVER=`jq -r .management.flannel.version <$kcfg`
 KUBEVER=`kubectl version --short 2>&- | cut -d: -f2 |tr -d ' '`
+OS='CentOS_8_Stream'
 
 
 #----------------------------------------------------------------------------------------#
+prep() {
+  sudo curl -L -o /etc/yum.repos.d/devel:kubic:libcontainers:stable.repo https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/$OS/devel:kubic:libcontainers:stable.repo
+  sudo curl -L -o /etc/yum.repos.d/devel:kubic:libcontainers:stable:cri-o.repo https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/${CRIOVER}/$OS/devel:kubic:libcontainers:stable:cri-o:${CRIOVER}.repo
+  sudo dnf install cri-o
+
+  sudo systemctl daemon-reload
+  sudo systemctl start crio
+  sudo modprobe -v br_netfilter
+
+}
+
+genhosts() {
+  for ntype in `jq -r '.nodes | keys []' <$kcfg`; do
+    c=`jq -r ".nodes[\"$ntype\"].count" <$kcfg`
+    tmpl_ip=`jq -r ".nodes[\"$ntype\"].ip" <$kcfg`
+    tmpl_name=`jq -r ".nodes[\"$ntype\"].hostname" <$kcfg`
+    for i in `seq 1 $c`; do
+      node=`sed -e "s/#{i}/${i}/g" <<<"${ntype}"`
+      ip=`sed -e "s/#{i}/${i}/g" <<<"${tmpl_ip}"`
+      name=`sed -e "s/#{i}/${i}/g" <<<"${tmpl_name}"`
+      echo "${ip} ${name} ${node}"
+    done
+  done >> /etc/hosts
+}
+
 
 ## Initialize the Control Plane
 cplane_setup() {
+  test "${PODNET:-null}" = 'null' && return
+  test "${KUBEVER:-null}" = 'null' && return
+  test "${NETVER:-null}" = 'null' && return
+
   # Generate a bootstrap token to authenticate nodes joining the cluster
-  test "$TOKEN" = 'null' && TOKEN=$(sudo kubeadm token generate)
+  test "${TOKEN:-null}" = 'null' && TOKEN=$(sudo kubeadm token generate)
   echo "Token: $TOKEN"
 
   sudo kubeadm init --token=${TOKEN} --kubernetes-version=${KUBEVER} --pod-network-cidr=${PODNET}
@@ -209,6 +241,10 @@ lens_setup() {
   lens
 }
 
+
+return
+prep
+cplane_setup
 exit 0
 
 #----------------------------------------------------------------------------------------#

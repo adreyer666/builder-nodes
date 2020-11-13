@@ -14,7 +14,9 @@ run:
 	ssh -X kjump1
 	ssh -X kmaster1
 
-clean:
-	-rm ~/.ssh/config.d/vagrant-$(NAME).conf
+stop:
 	-vagrant destroy -f
+
+clean: stop
+	-rm -f ~/.ssh/config.d/vagrant-$(NAME).conf
 

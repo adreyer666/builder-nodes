@@ -58,7 +58,7 @@ Vagrant.configure(2) do |config|
     config.vm.define "kmaster#{i}" do |masternode|
       masternode.vm.box = "centos/8"
       masternode.vm.hostname = "kmaster#{i}.example.com"
-      masternode.vm.network "private_network", ip: "172.16.16.10#{i}"
+      masternode.vm.network "private_network", ip: "172.16.16.11#{i}"
       masternode.vm.provision "shell", path: "bootstrap.sh"
     end
   end
