@@ -8,12 +8,32 @@ sudo dnf install -y \
     git jq \
     nfs-utils
 
-CFG=/vagrant/kcluster-config.json
-crudver=`jq -r .sw.crudini.version < ${CFG}`
-crudrev=`jq -r .sw.crudini.revision < ${CFG}`
-criover=`jq -r .sw.crio.version < ${CFG}`
-crioos=`jq -r .sw.crio.os < ${CFG}`
-kubeos=`jq -r .sw.kube.os < ${CFG}`
+kcfg=/vagrant/kcluster-config.json
+crudver=`jq -r .sw.crudini.version < ${kcfg}`
+crudrev=`jq -r .sw.crudini.revision < ${kcfg}`
+criover=`jq -r .sw.crio.version < ${kcfg}`
+crioos=`jq -r .sw.crio.os < ${kcfg}`
+kubeos=`jq -r .sw.kube.os < ${kcfg}`
+
+#-----------------------------------------------------------
+
+genhosts() {
+  for ntype in `jq -r '.nodes | keys []' <$kcfg`; do
+    c=`jq -r ".nodes[\"$ntype\"].count" <$kcfg`
+    tmpl_ip=`jq -r ".nodes[\"$ntype\"].ip" <$kcfg`
+    tmpl_name=`jq -r ".nodes[\"$ntype\"].hostname" <$kcfg`
+    for i in `seq 1 ${c:-0}`; do
+      node=`sed -e "s/#{i}/${i}/g" <<<"${ntype}"`
+      ip=`sed -e "s/#{i}/${i}/g" <<<"${tmpl_ip}"`
+      name=`sed -e "s/#{i}/${i}/g" <<<"${tmpl_name}"`
+      echo "${ip} ${name} ${node}"
+    done
+  done | sudo tee -a /etc/hosts
+}
+
+#-----------------------------------------------------------
+
+genhosts
 
 curl -skL -o /tmp/crudini.noarch.rpm \
     https://cbs.centos.org/kojifiles/packages/crudini/${crudver}/1.el8/noarch/crudini-${crudver}-${crudrev}.noarch.rpm \

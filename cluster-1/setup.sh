@@ -30,20 +30,6 @@ prep() {
 
 }
 
-genhosts() {
-  for ntype in `jq -r '.nodes | keys []' <$kcfg`; do
-    c=`jq -r ".nodes[\"$ntype\"].count" <$kcfg`
-    tmpl_ip=`jq -r ".nodes[\"$ntype\"].ip" <$kcfg`
-    tmpl_name=`jq -r ".nodes[\"$ntype\"].hostname" <$kcfg`
-    for i in `seq 1 $c`; do
-      node=`sed -e "s/#{i}/${i}/g" <<<"${ntype}"`
-      ip=`sed -e "s/#{i}/${i}/g" <<<"${tmpl_ip}"`
-      name=`sed -e "s/#{i}/${i}/g" <<<"${tmpl_name}"`
-      echo "${ip} ${name} ${node}"
-    done
-  done >> /etc/hosts
-}
-
 
 ## Initialize the Control Plane
 cplane_setup() {
