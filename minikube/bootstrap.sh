@@ -1,10 +1,12 @@
 #!/bin/bash
 
+set -e
+
 #sudo dnf upgrade -y
 sudo dnf install -y \
     procps iproute iptables nftables \
     lsof psmisc curl ca-certificates sudo \
-    vim-minimal openssh-clients gnupg2
+    vim-minimal openssh-clients gnupg2 jq
 
 #-----------------------------------------------------------
 
@@ -53,20 +55,24 @@ install_crio() {
   sudo systemctl start crio
 }
 
+runuser() {
+  su - vagrant -c "$*"
+}
+
 install_minikube() {
   # minikube
   curl -sLO https://storage.googleapis.com/minikube/releases/latest/minikube-latest.x86_64.rpm
   sudo rpm -ivh minikube-latest.x86_64.rpm
-
-  minikube config set memory 1989
-  minikube config set driver podman
-  minikube config set container-runtime cri-o
-  minikube start
-  minikube version
-
   test \! -f /usr/bin/kubectl \
     && printf '#!/bin/sh -f\nexec /usr/bin/minikube kubectl -- "$@"\n' | sudo tee /usr/bin/kubectl \
     && sudo chmod 755 /usr/bin/kubectl
+
+  runuser minikube config set memory 1989
+  runuser minikube config set driver podman
+  runuser minikube config set container-runtime cri-o
+  runuser minikube start
+  runuser minikube version
+  runuser minikube stop
 
   sudo tee /etc/systemd/system/minikube.service <<EOF
 [Unit]
@@ -88,12 +94,13 @@ EOF
   sudo systemctl restart minikube
 
   # enable modules
-  minikube addons enable metrics-server
-  kubectl get pod,svc -n kube-system
-  kubectl config view
+  runuser minikube addons enable dashboard
+  runuser minikube addons enable metrics-server
+  runuser kubectl get pod,svc -n kube-system
+  runuser kubectl config view
 
   # allow connections to dashboard
-  kubectl proxy --address 0.0.0.0 --disable-filter=true & disown
+  runuser kubectl proxy --address 0.0.0.0 --disable-filter=true & disown
   sudo iptables -A INPUT -p tcp -s 192.168.121.0/24 --dport 8001 -j ACCEPT
   sudo iptables -A INPUT -p tcp --dport 8001 -j REJECT
 
@@ -101,34 +108,53 @@ EOF
   dpath='/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/'
   echo "Dashboard is available at: http://${ip}:8001${dpath}"
   # security token
-  kubectl -n kube-system describe $(kubectl -n kube-system get secret -n kube-system -o name | grep namespace) | grep token:
+  runuser kubectl -n kube-system describe $(runuser kubectl -n kube-system get secret -n kube-system -o name | grep namespace) | grep token:
 }
 
 test_minikube() {
-  kubectl create deployment hello-minikube --image=k8s.gcr.io/echoserver:1.4
+  runuser kubectl create deployment hello-minikube --image=k8s.gcr.io/echoserver:1.4
   sleep 15
-  kubectl get deployments
-  kubectl get pods
-  kubectl get events
+  runuser kubectl get deployments
+  runuser kubectl get pods
+  runuser kubectl get events
 
-
-  ## kubectl expose deployment hello-minikube --type=LoadBalancer --port=8080
-  ## minikube service hello-minikube
-  ## kubectl get services
-
-  kubectl expose deployment hello-minikube --type=NodePort --port=8080
+  runuser kubectl expose deployment hello-minikube --type=NodePort --port=8080
   sleep 10
-  kubectl get services hello-minikube
-  minikube service hello-minikube
-  kubectl port-forward --address 0.0.0.0 service/hello-minikube 7080:8080 &
+  runuser kubectl get services hello-minikube
+  runuser minikube service hello-minikube
+  runuser kubectl port-forward --address 0.0.0.0 service/hello-minikube 7080:8080 &
+  pid=$!
   sleep 2
   ip=`hostname -I | cut -d\  -f1`
   echo "Test app is available at: http://${ip}:7080"
   echo -n "press enter to stop "; read x
 
   # cleanup
-  kubectl delete service hello-minikube
-  kubectl delete deployment hello-minikube
+  runuser kill ${pid}
+  runuser kubectl delete service hello-minikube
+  runuser kubectl delete deployment hello-minikube
+
+  #---------------------------
+
+  runuser kubectl create deployment balanced --image=k8s.gcr.io/echoserver:1.4
+  runuser kubectl expose deployment balanced --type=LoadBalancer --port=8080
+  runuser minikube tunnel -c &
+  pid=$!
+  runuser kubectl get services balanced
+  ip=`runuser kubectl get services balanced -o json | jq -r .spec.clusterIP`
+  echo "Test app is available at http://${ip}:8080"
+  echo '----------------'
+  curl http://${ip}:8080
+  echo '----------------'
+
+  # cleanup
+  runuser kill ${pid}
+  runuser kubectl delete service balanced
+  runuser kubectl delete deployment balanced
+
+  #---------------------------
+
+  runuser kubectl get svc,pods,deploy -A
 }
 
 #-----------------------------------------------------------
