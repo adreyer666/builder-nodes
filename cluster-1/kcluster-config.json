@@ -5,16 +5,19 @@
 	},
 	"nodes":{
 		"kjump#{i}": {
+			"role":"jumphost",
 			"count":1,
 			"hostname":"kjump#{i}.example.com",
 			"ip":"172.16.16.10#{i}"
 		},
 		"kmaster#{i}": {
+			"role":"master",
 			"count":1,
 			"hostname":"kmaster#{i}.example.com",
 			"ip":"172.16.16.11#{i}"
 		},
 		"kworker#{i}": {
+			"role":"worker",
 			"count":2,
 			"hostname":"kworker#{i}.example.com",
 			"ip":"172.16.16.20#{i}"
