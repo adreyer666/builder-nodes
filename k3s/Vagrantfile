@@ -1,0 +1,55 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+ENV['VAGRANT_NO_PARALLEL'] = 'yes'
+
+Vagrant.configure(2) do |config|
+
+  config.vm.provider "parallels" do |p, o|
+    p.memory = "2048"
+  end
+  # Increase memory for Virtualbox
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "2048"
+  end
+  # Increase memory for VMware
+  ["vmware_fusion", "vmware_workstation"].each do |p|
+    config.vm.provider p do |v|
+      v.vmx["memsize"] = "2048"
+      v.vmx["numvcpus"] = "2"
+    end
+  end
+
+  # Increase memory for LibVirt and add devices for gueat agent
+  config.vm.provider "libvirt" do |libvirt|
+    libvirt.memory = 2048
+    libvirt.cpus = 2
+    libvirt.channel :type => 'unix', :target_name => 'org.qemu.guest_agent.0', :target_type => 'virtio'
+    libvirt.channel :type => 'spicevmc', :target_name => 'com.redhat.spice.0', :target_type => 'virtio'
+    libvirt.driver = 'kvm'
+  end
+
+  MasterCount = 1
+  # Kubernetes Master Nodes
+  (1..MasterCount).each do |i|
+    config.vm.define "k3smaster#{i}" do |masternode|
+      masternode.vm.box = "centos/8"
+      masternode.vm.hostname = "k3smaster#{i}.example.com"
+      masternode.vm.network "private_network", ip: "172.16.18.11#{i}"
+      masternode.vm.provision "shell", path: "bootstrap.sh", args: ["172.16.18.111"]
+    end
+  end
+
+  NodeCount = 2
+  # Kubernetes Worker Nodes
+  (1..NodeCount).each do |i|
+    config.vm.define "k3sworker#{i}" do |workernode|
+      workernode.vm.box = "centos/8"
+      workernode.vm.hostname = "k3sworker#{i}.example.com"
+      workernode.vm.network "private_network", ip: "172.16.18.20#{i}"
+      workernode.vm.provision "shell", path: "bootstrap.sh", args: ["172.16.18.111"]
+    end
+  end
+
+end
+
