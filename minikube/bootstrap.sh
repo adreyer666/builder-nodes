@@ -55,7 +55,7 @@ install_crio() {
   sudo systemctl start crio
 }
 
-runuser() {
+runasuser() {
   su - vagrant -c "$*"
 }
 
@@ -67,12 +67,13 @@ install_minikube() {
     && printf '#!/bin/sh -f\nexec /usr/bin/minikube kubectl -- "$@"\n' | sudo tee /usr/bin/kubectl \
     && sudo chmod 755 /usr/bin/kubectl
 
-  runuser minikube config set memory 1989
-  runuser minikube config set driver podman
-  runuser minikube config set container-runtime cri-o
-  runuser minikube start
-  runuser minikube version
-  runuser minikube stop
+  echo "export MINIKUBE_IN_STYLE=false" | runasuser tee -a .bashrc
+  runasuser minikube config set memory 1989
+  runasuser minikube config set driver podman
+  runasuser minikube config set container-runtime cri-o
+  runasuser minikube start
+  runasuser minikube version
+  runasuser minikube stop
 
   sudo tee /etc/systemd/system/minikube.service <<EOF
 [Unit]
@@ -81,6 +82,7 @@ Description=Minikube startup
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+Environment="MINIKUBE_IN_STYLE=false"
 ExecStart=/usr/bin/minikube start
 ExecStop=/usr/bin/minikube stop
 User=vagrant
@@ -94,13 +96,13 @@ EOF
   sudo systemctl restart minikube
 
   # enable modules
-  runuser minikube addons enable dashboard
-  runuser minikube addons enable metrics-server
-  runuser kubectl get pod,svc -n kube-system
-  runuser kubectl config view
+  runasuser minikube addons enable dashboard
+  runasuser minikube addons enable metrics-server
+  runasuser kubectl get pod,svc -n kube-system
+  runasuser kubectl config view
 
   # allow connections to dashboard
-  runuser kubectl proxy --address 0.0.0.0 --disable-filter=true & disown
+  runasuser kubectl proxy --address 0.0.0.0 --disable-filter=true & disown
   sudo iptables -A INPUT -p tcp -s 192.168.121.0/24 --dport 8001 -j ACCEPT
   sudo iptables -A INPUT -p tcp --dport 8001 -j REJECT
 
@@ -108,21 +110,21 @@ EOF
   dpath='/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/'
   echo "Dashboard is available at: http://${ip}:8001${dpath}"
   # security token
-  runuser kubectl -n kube-system describe $(runuser kubectl -n kube-system get secret -n kube-system -o name | grep namespace) | grep token:
+  runasuser kubectl -n kube-system describe $(runasuser kubectl -n kube-system get secret -n kube-system -o name | grep namespace) | grep token:
 }
 
 test_minikube() {
-  runuser kubectl create deployment hello-minikube --image=k8s.gcr.io/echoserver:1.4
+  runasuser kubectl create deployment hello-minikube --image=k8s.gcr.io/echoserver:1.4
   sleep 15
-  runuser kubectl get deployments
-  runuser kubectl get pods
-  runuser kubectl get events
+  runasuser kubectl get deployments
+  runasuser kubectl get pods
+  runasuser kubectl get events
 
-  runuser kubectl expose deployment hello-minikube --type=NodePort --port=8080
+  runasuser kubectl expose deployment hello-minikube --type=NodePort --port=8080
   sleep 10
-  runuser kubectl get services hello-minikube
-  runuser minikube service hello-minikube
-  runuser kubectl port-forward --address 0.0.0.0 service/hello-minikube 7080:8080 &
+  runasuser kubectl get services hello-minikube
+  runasuser minikube service hello-minikube
+  runasuser kubectl port-forward --address 0.0.0.0 service/hello-minikube 7080:8080 &
   pid=$!
   sleep 2
   ip=`hostname -I | cut -d\  -f1`
@@ -130,31 +132,31 @@ test_minikube() {
   echo -n "press enter to stop "; read x
 
   # cleanup
-  runuser kill ${pid}
-  runuser kubectl delete service hello-minikube
-  runuser kubectl delete deployment hello-minikube
+  runasuser kill ${pid}
+  runasuser kubectl delete service hello-minikube
+  runasuser kubectl delete deployment hello-minikube
 
   #---------------------------
 
-  runuser kubectl create deployment balanced --image=k8s.gcr.io/echoserver:1.4
-  runuser kubectl expose deployment balanced --type=LoadBalancer --port=8080
-  runuser minikube tunnel -c &
+  runasuser kubectl create deployment balanced --image=k8s.gcr.io/echoserver:1.4
+  runasuser kubectl expose deployment balanced --type=LoadBalancer --port=8080
+  runasuser minikube tunnel -c &
   pid=$!
-  runuser kubectl get services balanced
-  ip=`runuser kubectl get services balanced -o json | jq -r .spec.clusterIP`
+  runasuser kubectl get services balanced
+  ip=`runasuser kubectl get services balanced -o json | jq -r .spec.clusterIP`
   echo "Test app is available at http://${ip}:8080"
   echo '----------------'
   curl http://${ip}:8080
   echo '----------------'
 
   # cleanup
-  runuser kill ${pid}
-  runuser kubectl delete service balanced
-  runuser kubectl delete deployment balanced
+  runasuser kill ${pid}
+  runasuser kubectl delete service balanced
+  runasuser kubectl delete deployment balanced
 
   #---------------------------
 
-  runuser kubectl get svc,pods,deploy -A
+  runasuser kubectl get svc,pods,deploy -A
 }
 
 #-----------------------------------------------------------
