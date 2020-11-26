@@ -1,0 +1,83 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+ENV['VAGRANT_NO_PARALLEL'] = 'yes'
+
+Vagrant.configure(2) do |config|
+
+  config.vm.provider "parallels" do |p, o|
+    p.memory = "1024"
+  end
+  # Increase memory for Virtualbox
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "1024"
+  end
+  # Increase memory for VMware
+  ["vmware_fusion", "vmware_workstation"].each do |p|
+    config.vm.provider p do |v|
+      v.vmx["memsize"] = "1024"
+      v.vmx["numvcpus"] = "2"
+    end
+  end
+
+  # Increase memory for LibVirt and add devices for gueat agent
+  config.vm.provider "libvirt" do |libvirt|
+    # libvirt.uri = "qemu+ssh://virtual@192.168.1.10/system"
+    libvirt.memory = 1024
+    libvirt.cpus = 2
+    libvirt.channel :type => 'unix', :target_name => 'org.qemu.guest_agent.0', :target_type => 'virtio'
+    libvirt.channel :type => 'spicevmc', :target_name => 'com.redhat.spice.0', :target_type => 'virtio'
+    libvirt.driver = 'kvm'
+    libvirt.management_network_name = "vagrant-carbon-2"
+    libvirt.management_network_address = "192.168.80.128/25"
+  end
+
+  config.vm.synced_folder '.', '/vagrant', type: "nfs", nfs_version: '3', nfs_export: false,  mount_options: ['rw', 'tcp', 'actimeo=2']
+
+  #  # Load Balancer Node
+  #  config.vm.define "loadbalancer" do |lb|
+  #    lb.vm.box = "generic/ubuntu2004"
+  #    lb.vm.hostname = "loadbalancer.example.com"
+  #    lb.vm.network "private_network", ip: "172.16.16.100"
+  #    lb.vm.provider "virtualbox" do |v|
+  #      v.name = "loadbalancer"
+  #      v.memory = 1024
+  #      v.cpus = 1
+  #    end
+  #  end
+
+  JumpCount = 1
+  # Kubernetes Master Nodes
+  (1..JumpCount).each do |i|
+    config.vm.define "kjump#{i}" do |jumpnode|
+      jumpnode.vm.box = "debian/testing64"
+      jumpnode.vm.hostname = "kjump#{i}.example.com"
+      jumpnode.vm.network "private_network", ip: "172.16.17.10#{i}"
+      jumpnode.vm.provision "shell", path: "bootstrap.sh"
+    end
+  end
+
+  MasterCount = 1
+  # Kubernetes Master Nodes
+  (1..MasterCount).each do |i|
+    config.vm.define "kmaster#{i}" do |masternode|
+      masternode.vm.box = "debian/testing64"
+      masternode.vm.hostname = "kmaster#{i}.example.com"
+      masternode.vm.network "private_network", ip: "172.16.17.11#{i}"
+      masternode.vm.provision "shell", path: "bootstrap.sh"
+    end
+  end
+
+  NodeCount = 2
+  # Kubernetes Worker Nodes
+  (1..NodeCount).each do |i|
+    config.vm.define "kworker#{i}" do |workernode|
+      workernode.vm.box = "debian/testing64"
+      workernode.vm.hostname = "kworker#{i}.example.com"
+      workernode.vm.network "private_network", ip: "172.16.17.20#{i}"
+      workernode.vm.provision "shell", path: "bootstrap.sh"
+    end
+  end
+
+end
+

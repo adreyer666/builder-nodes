@@ -1,0 +1,79 @@
+{
+	"security": {
+		"master": "kmaster1",
+		"#token": "",
+		"#hash": ""
+	},
+	"nodes": {
+		"kjump#{i}": {
+			"role":"jumphost",
+			"count":1,
+			"hostname":"kjump#{i}.example.com",
+			"ip":"172.16.17.10#{i}"
+		},
+		"kmaster#{i}": {
+			"role":"master",
+			"count":1,
+			"hostname":"kmaster#{i}.example.com",
+			"ip":"172.16.17.11#{i}"
+		},
+		"kworker#{i}": {
+			"role":"worker",
+			"count":2,
+			"hostname":"kworker#{i}.example.com",
+			"ip":"172.16.17.20#{i}"
+		}
+	},
+	"pod": {
+		"network":"192.168.12.0/24",
+		"cluster_ip": "192.168.1.112/24"
+	},
+	"container": {
+		"runtime": {
+			"version":"1.19"
+		}
+	},
+	"management": {
+		"user": "vagrant",
+		"applications": [
+			"dashboard",
+			"lens"
+		],
+		"dashboard": {
+			"version":"v2.0.4",
+			"address":"",
+			"access":""
+		},
+		"lens":{
+			"version":"3.6.8"
+		}
+	},
+	"sw": {
+		"repos": {
+			"libcontainer": {
+				"#url":"https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Debian_Testing/",
+				"url":"https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Debian_10/"
+			},
+			"crio": {
+				"url":"https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/"
+			},
+			"kube": {
+				"url":"https://apt.kubernetes.io/"
+			}
+		},
+		"pkgs":{
+			"crudini": {
+				"version":"0.9.3",
+				"revision":"1.el8"
+			},
+			"crio": {
+				"version":"1.19",
+				"#os":"Debian_Unstable",
+				"os":"Debian_Testing"
+			},
+			"kube": {
+				"os":"xenial"
+			}
+		}
+	}
+}

@@ -1,0 +1,38 @@
+---
+ apiVersion: v1
+ kind: Pod
+ metadata:
+  creationTimestamp: "2020-11-16T21:27:53Z"
+  labels:
+    app: webvirtcloud-2020-11-16
+  name: webvirtcloud-2020-11-16
+ spec:
+  containers:
+  - command:
+    - /opt/service/run.sh
+    env:
+    - name: VERSION
+      value: "1"
+    - name: RELEASE
+      value: "0"
+    - name: REVISION
+      value: "0"
+    - name: NAME
+      value: webvirtcloud
+    - name: ARCH
+      value: x86_64
+    image: registry.office.adreyer.com:5000/webvirtcloud:latest
+    name: webvirtcloud-2020-11-16
+    ports:
+    - containerPort: 8008
+      hostPort: 8008
+      protocol: TCP
+    resources: {}
+    securityContext:
+      allowPrivilegeEscalation: true
+      capabilities: {}
+      privileged: false
+      readOnlyRootFilesystem: false
+      seLinuxOptions: {}
+    workingDir: /srv/webvirtcloud/
+ status: {}
